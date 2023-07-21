@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Let's Chat!</title>
+	<!-- custom styles for this application -->
+	<style>
+		#msg_box{
+			display: block;
+			width: 500px;
+			height: 300px;
+		}
+		.hidden{
+			display: none;
+		}
+
+
+	</style>
+
+</head>
+<body>
+	<h1>Let's Chat!</h1>
+
+	<div id="panel_name">
+		Name: <input type="text" id="name">
+		<button id= "save_name">Chat</button><br>
+		<a href="admin.php">Admin Login</a>
+	</div>
+	<div id ="panel_chat" class="hidden">
+		<h2 id="welcome">Hello</h2>
+		<h4>Select chat room:
+		<select id ="chatrooms">
+			<option value='room1'>Chat Room 1</option>
+			<option value='room2'>Chat Room 2</option>
+			<option value='room3'>Chat Room 3</option>
+		</select>
+		</h4>
+		<p>Change username:
+		New username <input type="text" id="new_name">
+		<button id ="save_newname">Update Name</button>
+		</p>
+		<textarea id="msg_box" readonly></textarea>
+		<input type="text" id="new_msg">
+		<button id="send_msg">Send Message</button>
+	</div>
+
+	 <!-- bring in the jQuery library -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <!-- custom script for this application -->
+    <script>
+
+	$( document ).ready(function() {
+
+    	//getting DOM refs
+    	let panel_name = document.querySelector("#panel_name");
+    	let panel_chat = document.querySelector("#panel_chat");
+    	let name = document.querySelector("#name");
+    	let save_name = document.querySelector("#save_name");
+    	let header = document.querySelector("#welcome");
+    	let save_newname = document.querySelector("#save_newname");
+    	let new_name = document.querySelector ("#new_name");
+    	let rooms = document.querySelector("#chatrooms");
+
+
+    	let msg_box = document.querySelector("#msg_box");
+    	let new_msg = document.querySelector("#new_msg");
+    	let send_msg = document.querySelector("#send_msg");
+
+    	//when the user clicks on save name we need to go to the textbox msg area
+    	var username;
+    	var scroll = true;
+    	var msg;
+    	var chat_room ="room1";
+
+			if (localStorage.getItem('name') !== null) {
+
+			username = localStorage.getItem("name");
+			//show the chat panel
+			panel_chat.classList.remove("hidden");
+			//hide the name panel
+			panel_name.classList.add("hidden");
+
+    	rooms.onchange = function (event){
+
+    		chat_room = rooms.value;
+    	}
+    	console.log(chat_room);
+
+    	//console.log (document.cookie);
+    	//parse to chcek for cookie
+    	//hide specfic panel
+    	//if ot does not exist then display it
+
+    	/*save_name.onclick = function (event){
+	    	//grab the name the user entered
+	    	if (name.value.length > 0 ){
+	    		username = name.value;
+	    	}
+	    	else{
+	    		alert("enter username");
+	    	}
+
+	    } */
+
+    	save_newname.onclick = function (event){
+				console.log(new_name.value);
+    		if (new_name.value.length > 0){
+    			username = new_name.value;
+					localStorage.setItem("name", username);
+    		}
+    		else{
+    			alert("please enter a valid name");
+
+    		}
+
+    	}
+
+		//when the user chooses to chat we need to send that data to server to be stored
+		send_msg.onclick = function(event){ // this is for sending new data to the server
+
+			//package up this message and send it to the server to be stored for later use
+			msg = new_msg.value; //getting the value from DOM ref new_msg
+			$.ajax({
+				url: 'savemessage.php?cache=' + Math.random(),
+				type:'POST',
+				data:{
+					message: msg,
+					u_name: username,
+					chats: chat_room
+				},
+				success: function(data,status){
+					console.log(data);
+					if (data == "message too short"){
+						alert("Please type a message")
+					}
+					else if (data == "banned"){
+						alert("You used a banned word");
+					}
+				},
+				error: function(){
+					console.log("error");
+				}
+			});
+		}
+
+		//grabbing data from the server
+		msg_box.onmouseenter = function(){
+			scroll = false;
+			}
+		msg_box.onmouseleave = function(){
+			scroll = true;
+
+			}
+
+		function getData(){
+			//contact the text file and grab its current value
+			$.ajax({
+				type:'GET',
+				url: 'data/'+chat_room+'.txt?nocache='+Math.random(),
+				success: function(data,status){
+					console.log(data);
+					msg_box.value = data;
+					if (scroll){
+							msg_box.scrollTop = msg_box.scrollHeight;
+
+						}
+
+
+
+					//schedule to get new data after 1 second
+				}
+			});
+		}
+
+	setInterval(getData,1000);
+
+}
+
+
+
+
+
+
+
+else { //nothing in local storage
+
+	rooms.onchange = function (event){
+
+    		chat_room = rooms.value;
+    	}
+    	console.log(chat_room);
+
+    	//console.log (document.cookie);
+    	//parse to chcek for cookie
+    	//hide specfic panel
+    	//if ot does not exist then display it
+
+    	save_name.onclick = function (event){
+	    	//grab the name the user entered
+	    	if (name.value.length > 0 ){
+	    		username = name.value
+					localStorage.setItem("name", username);
+	    		//show the chat panel
+	    		panel_chat.classList.remove("hidden");
+
+	    		//hide the name panel
+	    		panel_name.classList.add("hidden");
+
+	    	}
+	    	else{
+	    		alert("enter username");
+	    	}
+
+	    }
+
+    	save_newname.onclick = function (event){
+    		if (new_name.value > 0){
+    			username = new_name.value;
+					localStorage.setItem("name", username);
+    		}
+    		else{
+    			alert("please enter a valid name");
+
+    		}
+
+    	}
+
+		//when the user chooses to chat we need to send that data to server to be stored
+		send_msg.onclick = function(event){ // this is for sending new data to the server
+
+			//package up this message and send it to the server to be stored for later use
+			msg = new_msg.value; //getting the value from DOM ref new_msg
+			$.ajax({
+				url: 'savemessage.php',
+				type:'POST',
+				data:{
+					message: msg,
+					u_name: username,
+					chats: chat_room
+				},
+				success: function(data,status){
+					console.log(data);
+					if (data == "message too short"){
+						alert("Please type a message")
+					}
+					else if ("banned"){
+						
+					}
+				},
+				error: function(){
+					console.log("error");
+				}
+			});
+		}
+
+		//grabbing data from the server
+		msg_box.onmouseenter = function(){
+			scroll = false;
+			}
+		msg_box.onmouseleave = function(){
+			scroll = true;
+
+			}
+
+		function getData(){
+			//contact the text file and grab its current value
+			$.ajax({
+				type:'GET',
+				url: 'data/'+chat_room+'.txt?nocache='+Math.random(),
+				success: function(data,status){
+					console.log(data);
+					msg_box.value = data;
+					if (scroll){
+							msg_box.scrollTop = msg_box.scrollHeight;
+
+						}
+
+
+
+					//schedule to get new data after 1 second
+				}
+			});
+		}
+
+	setInterval(getData,1000);
+}
+
+});//end of ready function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </script>
+
+</body>
+</html>
